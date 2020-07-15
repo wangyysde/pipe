@@ -9,8 +9,9 @@ import (
 var Proversion = "v0.0.1"
 var Progname = "pipe"
 var Commit = "NA" 
-var BuildBranch = "master"
+var BuildBranch string
 var Buildstamp string
+var goversion string 
 var DefaultPrefix = "/usr/local/" + Progname
 var DefaultConFile = "/usr/local/" + Progname + "/conf/config.yaml"
 
@@ -20,7 +21,8 @@ type app struct {
 	version string 
 	commit string
 	buildBranch string 
-	buildstamp string 
+	buildstamp string
+	goversion string 
 }
 
 //Struct for global block 
@@ -54,6 +56,7 @@ func ParseConfig(confFile string)(result int){
 		Commit,
 		BuildBranch,
 		Buildstamp,
+		goversion,
 	}
 
 	if len(confFile) <= 0{
