@@ -3,20 +3,17 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"path/filepath"
 	"config"
+	"net"
 	"github.com/pkg/errors"                  //https://github.com/pkg/errors       https://godoc.org/github.com/pkg/errors
 	kingpin "gopkg.in/alecthomas/kingpin.v2" //https://github.com/alecthomas/kingpin    https://gopkg.in/alecthomas/kingpin.v2
 )
 
 var (
 	a          = kingpin.New(filepath.Base(os.Args[0]), "A command-line "+config.Progname+" application.")
-//	debug      = a.Flag("debug", "Enable debug mode.").Default("false").Bool()
-//	serverIP   = a.Flag("server", "Server address.").Default("0.0.0.0").IP()
-//	serverPort = a.Flag("port", "Server Port").Default("8080").Int()
 	configFile     = a.Flag("config", "Configuration file path").Default(config.DefaultConFile).String()
-//	accesslog  = a.Flag("access-log", "Access Log file").Default("/var/log/" + progname + ".log").String()
-//	errorlog   = a.Flag("error-log", "Error Log file").Default("/var/log/" + progname + "-error.log").String()
 	version    = a.Flag("version", "Show the version information for "+config.Progname).Bool()
 )
 
@@ -25,46 +22,54 @@ func main() {
 	a.HelpFlag.Short('h')
 	_, err := a.Parse(os.Args[1:])
 	if err != nil {
-		fmt.Fprintln(os.Stderr, errors.Wrapf(err, "Error parsing commandline arguments"))
-		os.Exit(2)
+		fmt.Fprintln(os.Stderr, errors.Wrapf(err, "Error  commandline arguments\n"))
+		os.Exit(10001)          //Error no: AABBB. AA: Package seq,main is 10; BBB: error no 
 	}
 
 	if *version {
-		fmt.Printf(config.Progname + " " + config.Proversion + "\n")
-		os.Exit(1)
+		myerr := errors.New(config.Progname + " " + config.Proversion + "\n")
+		fmt.Fprintln(os.Stderr,errors.WithMessagef(myerr,"Go Version: %s Branch: %s CommitID: %S Build time: %s \n ", config.Goversion, config.BuildBranch,config.Commit, config.Buildstamp))
+		os.Exit(10002)
 	}
 
 	if config.ParseConfig(*configFile) > 0 {
-		//fmt.Fprintln(os.Stderr, errors.Wrapf(err, "Error parsing config file: %s", config.Cfg.Global.Config))
-	       fmt.Printf("Error parsing config file: %s\n", config.Cfg.Global.Config)	
-               os.Exit(1)
+		myerr := errors.New(fmt.Sprintf("Error parsing config file: %s\n", config.Cfg.Global.Config))
+		fmt.Fprintln(os.Stderr, myerr)
+    os.Exit(10003)
 	}
 
-	fmt.Printf("config values :%+v",config.Cfg)
-/*
-	if *serverPort <= 1024 || *serverPort >= 65535 {
-		fmt.Printf("The listen port should greater than 1024 and less than 65535\n")
-		os.Exit(1)
+	if strings.ToUpper(config.Cfg.Log.Loglevel) == "DEBUG" {
+		myerr := errors.New(fmt.Sprintf("Parsed config values are:\n %+v\n", config.Cfg))
+		fmt.Fprintln(os.Stderr, myerr)
 	}
-
-	if *debug {
-		log_cfg.log_level = 3
-	}
-
-	if accesslog != nil {
-		log_cfg.access_log = *accesslog
-	}
-
-	if errorlog != nil {
-		log_cfg.error_log = *errorlog
-	}
-*/
 	
-	//log_init()
+	ret := log_init() 
+	if ret > 0 {
+		os.Exit(ret)
+	}
 
-	//*debug = true
-//	fmt.Printf("Debug is:%v\n", *debug)
-//	fmt.Println("config is:", *config)
-//	fmt.Printf("this is a test message")
-	//kingpin.Usage()
+	//Print start message to error log file
+	log_error("Starting " + config.Cfg.App.Name +"Server", "Info")
+	log_error("Parsing command line parameters successful ", "Info")
+	log_error("Parsing config file： "+config.Cfg.Global.Config +" successful ", "Info")
+
+	//Checking the parameters from config file are available
+	addr, err := net.ResolveIPAddr("ip", config.Cfg.Global.Listen)
+	if err != nil {
+		log_startmsg("The serer listen ip " + config.Cfg.Global.Listen + "is invalid !" , "Error")
+		os.Exit(10006)
+	}else{
+		log_startmsg("The serer IP is: " +addr.String() , "Info")
+	}
+
+	if config.Cfg.Global.Port <= 1024 || config.Cfg.Global.Port >= 65535 {
+		log_startmsg("The listen port should greater than 1024 and less than 65535 !" , "Error")
+		os.Exit(10007)
+	}else{
+		log_startmsg("The listen port is: " + fmt.Sprintf("%d",config.Cfg.Global.Port), "Info")
+	}
+
+
+	os.Exit(0)
+
 }

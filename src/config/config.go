@@ -11,18 +11,18 @@ var Progname = "pipe"
 var Commit = "NA" 
 var BuildBranch string
 var Buildstamp string
-var goversion string 
+var Goversion string 
 var DefaultPrefix = "/usr/local/" + Progname
 var DefaultConFile = "/usr/local/" + Progname + "/conf/config.yaml"
 
 // Struct for app block. program name 
 type app struct {
-	name string 
-	version string 
-	commit string
-	buildBranch string 
-	buildstamp string
-	goversion string 
+	Name string 
+	Version string 
+	Commit string
+	BuildBranch string 
+	Buildstamp string
+	Goversion string 
 }
 
 //Struct for global block 
@@ -34,7 +34,7 @@ type  global struct {
 
 //Struct for log block 
 type struLog struct {
-	Loglevel int `yaml: "loglevel"`
+	Loglevel string `yaml: "loglevel"`
 	AccessLog string `yaml: "accesslog"`
 	ErrorLog string `yaml: "errorlog"`
 }
@@ -56,7 +56,7 @@ func ParseConfig(confFile string)(result int){
 		Commit,
 		BuildBranch,
 		Buildstamp,
-		goversion,
+		Goversion,
 	}
 
 	if len(confFile) <= 0{
