@@ -2,7 +2,9 @@ global:
   config: /usr/local/pipe/config/config.yaml
   listen: 192.168.1.14
   port: 8081
+  root: /usr/local/pipe/www
+  pid: /usr/local/pipe/run/pipe.pid
 log:
-  loglevel: Debug
+  loglevel: Debug      # panic fatal error warn info debug trace
   accesslog: /var/log/acc_log.log
   errorlog: /var/log/err_log.log

@@ -1,6 +1,6 @@
 # https://www.cnblogs.com/notokoy/p/11746785.html
 GO = GO111MODULE=off go
-GO_FILES ?=  $(wildcard ./src/config/*.go ./src/server/*.go)
+SERVER_GO_FILES ?=  $(wildcard ./src/server/*.go)
 SH_FILES ?= $(shell find ./scripts -name *.sh)
 GOVERSION ?= $(shell go version)
 BUILDTIME ?= $(shell date +'%Y.%m.%d.%H%M%S')
@@ -20,7 +20,7 @@ all: build-server install
 
 build-server:  ##Build pipe server
 	@echo "build pipe server"
-	$(GO) build -ldflags $(LDFlags)  -o ./bin/pipe-server ./src/server/log.go ./src/server/main.go 
+	$(GO) build -ldflags $(LDFlags)  -o ./bin/pipe-server  $(SERVER_GO_FILES) 
 
 install: ## Installing files to destination path
 	@echo "Installing files to destination path"

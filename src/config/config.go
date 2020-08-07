@@ -30,6 +30,8 @@ type  global struct {
 	Config string `yaml: "config"`
 	Listen string `yaml: "listen"`
 	Port int `yaml: "port"`
+	HomePath string `yaml: "root"`
+	PidPath string `yaml: "pid"`
 }
 
 //Struct for log block 
@@ -40,13 +42,13 @@ type struLog struct {
 }
 
 //Main config struct
-type config struct{
+type Config struct{
 	App app
 	Global global
 	Log struLog
 }
 
-var Cfg = new(config)
+var Cfg = new(Config)
 
 func ParseConfig(confFile string)(result int){
 	// Set default value to cfg struct

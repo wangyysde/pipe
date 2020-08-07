@@ -1,113 +1,211 @@
 package main
 
 import (
-	"io"
-	"log"
 	"os"
 	"strings"
-  "config"
+	"bzhylog"
+	"fmt"
 )
 
-//var log_level = [4]string{"Info", "Warnging", "Error", "debug"}
-var log_level = make(map[string]int)
-
-type str_log_conf struct {
-	log_level string 
-	access_log string
-	error_log  string
-	errLogFd  *os.File
-	accLogFd  *os.File
-}
-
+//Define log file descriptor
 var (
-	Access_logger *log.Logger
-	Error_logger  *log.Logger
-	Std_logger	*log.Logger
+	ErrFd *os.File = nil
+	AccFd *os.File = nil
 )
 
-var log_cfg str_log_conf
+//Define loggger for 
+var (
+	StdLog *bzhylog.Logger = nil 
+	AccLog *bzhylog.Logger = nil 
+	ErrLog *bzhylog.Logger = nil 
+)
 
-func log_init() (ret int) {
+// Create a new instance of the logger for StdOut.
+func CreateStdLog() {
+	StdLog =  bzhylog.New()
+	StdLog.Out = os.Stdout
+	StdLog.SetLevel(bzhylog.TraceLevel)
+	StdLog.SetFormatter(&bzhylog.TextFormatter{
+		DisableColors: false,
+		FullTimestamp: true,
+	})
+}
 
-	//Initating log_level map
-	log_level = map[string]int{
-		"INFO": 0, 
-		"WARNGING": 1, 
-		"ERROR": 2, 
-		"DEBUG": 3,
+// Create a new instance of the logger for Access Log.
+func CreateAccLog(AccLogFile string)(ret int)  {
+	AccLog = bzhylog.New()
+        AccFd, err := os.OpenFile(AccLogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	if err == nil {
+		AccLog.Out = AccFd
+	} else {
+		WriteLog2Stdout(fmt.Sprintf("Failed to open the ACCESS log file %s Error message: %s",AccLogFile,err), "fatal")
+		return 200001
 	}
-	Std_logger = log.New(io.Writer(os.Stdout), config.Progname+"-", log.Ldate|log.Ltime|log.Lshortfile)
 
-	Std_logger.Printf("Starting open the  error log file: %s", config.Cfg.Log.ErrorLog)
-	errLogFd, err := os.OpenFile(config.Cfg.Log.ErrorLog, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		Std_logger.Printf("Can not open the error log file: %s, Error message is: %s", config.Cfg.Log.ErrorLog, err)
-		return 10004
-	}
-	Error_logger = log.New(io.Writer(errLogFd), config.Progname, log.Ldate|log.Ltime|log.Lshortfile)
-	Std_logger.Printf("Opened error log file: %s successful", config.Cfg.Log.ErrorLog)
-	err = nil
-
-	Std_logger.Printf("Starting open the  access log file: %s", config.Cfg.Log.AccessLog)
-	accLogFd, err := os.OpenFile(config.Cfg.Log.AccessLog, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err != nil {
-		Std_logger.Printf("Can not open the error log file: %s, Error message is: %s",config.Cfg.Log.AccessLog, err)
-		return 10005
-	}
-	Access_logger = log.New(io.Writer(accLogFd), config.Progname, log.Ldate|log.Ltime|log.Lshortfile)
-	Std_logger.Printf("Opened acess log file: %s successful", config.Cfg.Log.AccessLog)
-	err = nil
-
-	log_cfg = str_log_conf{strings.ToUpper(config.Cfg.Log.Loglevel), config.Cfg.Log.AccessLog,config.Cfg.Log.ErrorLog,errLogFd,accLogFd}
 
 	return 0
 }
 
-func log_access(logmsg string) (ret int) {
-	if len(logmsg) > 0 {
-		Access_logger.Printf(logmsg)
-	}
+// Create a new instance of the logger for Error Log.
+func CreateErrLog(ErrLogFile string )(ret int)  {
+        ErrLog = bzhylog.New()
+        ErrFd, err := os.OpenFile(ErrLogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+        if err == nil {
+                ErrLog.Out = ErrFd
+        } else {
+                WriteLog2Stdout(fmt.Sprintf("Failed to open the ERROR log file %s Error message: %s",ErrLogFile,err), "fatal")
+                return 200002
+        }
 
+
+        return 0
+}
+
+//Write log msg to StdOut
+func WriteLog2Stdout(msg string, level string) (ret int){
+	switch strings.ToLower(level) {
+        	case "panic":
+			StdLog.Panic(msg)		
+        	case "fatal":
+                	StdLog.Fatal(msg)
+        	case "error":
+                	StdLog.Error(msg)
+        	case "warn", "warning":
+                	StdLog.Warn(msg)
+        	case "info":
+                	StdLog.Info(msg)
+        	case "debug":
+                	StdLog.Debug(msg)
+        	case "trace":
+                	StdLog.Trace(msg)
+		default:
+			WriteLog2Stdout("We got a log message without UNKNOW log level", "warn")
+        }
+	
+	return 0
+			
+}
+
+//Write log msg to Access log file
+func WriteLog2Acclog(msg string, level string) (ret int){
+        switch strings.ToLower(level) {
+                case "panic":
+                        AccLog.Panic(msg)
+                case "fatal":
+                        AccLog.Fatal(msg)
+                case "error":
+                        AccLog.Error(msg)
+                case "warn", "warning":
+                        AccLog.Warn(msg)
+                case "info":
+                        AccLog.Info(msg)
+                case "debug":
+                        AccLog.Debug(msg)
+                case "trace":
+                        AccLog.Trace(msg)
+                default:
+                        WriteLog2Stdout("We got a log message without UNKNOW log level", "warn")
+        }
+
+        return 0
+
+}
+
+
+//Write log msg to Error log file
+func WriteLog2Errlog(msg string, level string) (ret int){
+  switch strings.ToLower(level) {
+    case "panic":
+      ErrLog.Panic(msg)
+    case "fatal":
+      ErrLog.Fatal(msg)
+    case "error":
+    	ErrLog.Error(msg)
+    case "warn", "warning":
+      ErrLog.Warn(msg)
+    case "info":
+      ErrLog.Info(msg)
+    case "debug":
+      ErrLog.Debug(msg)
+    case "trace":
+      ErrLog.Trace(msg)
+    default:
+    	WriteLog2Stdout("We got a log message without UNKNOW log level", "warn")
+  }
+
+  return 0
+
+}
+
+
+//Set the level of access logger, error logger and stdout
+func SetLoglevel(level string ) (ret int ) {
+	switch strings.ToLower(level) {
+		case "panic":
+			StdLog.SetLevel(bzhylog.PanicLevel)
+			AccLog.SetLevel(bzhylog.PanicLevel)
+			ErrLog.SetLevel(bzhylog.PanicLevel)
+		case "fatal":
+      StdLog.SetLevel(bzhylog.FatalLevel) 
+    	AccLog.SetLevel(bzhylog.FatalLevel)
+      ErrLog.SetLevel(bzhylog.FatalLevel)
+		case "error":
+      StdLog.SetLevel(bzhylog.ErrorLevel) 
+      AccLog.SetLevel(bzhylog.ErrorLevel)
+      ErrLog.SetLevel(bzhylog.ErrorLevel)
+		case "warn":
+      StdLog.SetLevel(bzhylog.WarnLevel) 
+    	AccLog.SetLevel(bzhylog.WarnLevel)
+      ErrLog.SetLevel(bzhylog.WarnLevel)
+		case "info":
+      StdLog.SetLevel(bzhylog.InfoLevel) 
+      AccLog.SetLevel(bzhylog.InfoLevel)
+      ErrLog.SetLevel(bzhylog.InfoLevel)
+		case "debug":
+      StdLog.SetLevel(bzhylog.DebugLevel) 
+      AccLog.SetLevel(bzhylog.DebugLevel)
+      ErrLog.SetLevel(bzhylog.DebugLevel)
+		case "trace":
+      StdLog.SetLevel(bzhylog.TraceLevel) 
+      AccLog.SetLevel(bzhylog.TraceLevel)
+      ErrLog.SetLevel(bzhylog.TraceLevel)
+		default:
+			WriteLog2Stdout("We got a invalid level of log. We will set log level to FATAL", "fatal")
+			StdLog.SetLevel(bzhylog.FatalLevel) 
+      AccLog.SetLevel(bzhylog.FatalLevel)
+      ErrLog.SetLevel(bzhylog.FatalLevel)
+	}
+	
 	return 0
 }
 
-func log_error(logmsg string, loglevel string) (ret int) {
-	if len(logmsg) > 0 {
-		if log_level[strings.ToUpper(log_cfg.log_level)] >= log_level[strings.ToUpper(loglevel)]{
-			logPrefix := config.Progname + " - " + loglevel + "-"
-			Error_logger.SetPrefix(logPrefix)
-			Error_logger.Printf(logmsg)
+//Closing the file descriptors of accesss log.
+func CloseAccLogFd()(ret int){
+	if AccFd != nil {
+		err := AccFd.Close()
+		if err != nil {
+			WriteLog2Errlog(fmt.Sprintf("Closing Access log err %s", err),"error")
 		}
+		AccFd = nil
+	}
+
+	return 0
+} 
+
+//Closing the file descriptors of error log.
+func CloseErrLogFd()(ret int){
+	if ErrFd != nil {
+		 ErrFd.Close()
 	}
 	return 0
 }
 
-func log_startmsg(logmsg string,loglevel string) (ret int){
-	if len(logmsg) > 0 {
-		logPrefix := config.Progname + " - " + loglevel + "-"
-		Std_logger.SetPrefix(logPrefix)
-		Std_logger.Printf(logmsg)
-		if log_level[strings.ToUpper(log_cfg.log_level)] >= log_level[strings.ToUpper(loglevel)]{
-			Error_logger.SetPrefix(logPrefix)
-			Error_logger.Printf(logmsg)
-		}
+//Writing Starting log message to Stdout and Error log file 
+func WriteStartLog(msg string, level string){
+	WriteLog2Stdout(msg, level)
+	if ErrFd != nil {
+		WriteLog2Errlog(msg, level)
 	}
-
-	return 0
+	
 }
 
-func log_close() ( ret int){
-	err := log_cfg.errLogFd.Close()
-	if err != nil {
-		Std_logger.Printf("Close error log file: Error %s, Error message is: %s", log_cfg.error_log, err)
-	}
-	err = nil
-	 
-	err = log_cfg.accLogFd.Close()
-	if err != nil {
-		Std_logger.Printf("Close access log file: Error %s, Error message is: %s", log_cfg.access_log, err)
-	}
-	err = nil
-
-	return 0
-}
