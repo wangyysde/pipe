@@ -1,0 +1,4 @@
+bzhyserver/sse     https://github.com/gin-contrib/sse
+bzhyserver/bytesconv  github.com/gin-gonic/gin/internal/bytesconv
+bzhyserver/json       github.com/gin-gonic/gin/internal/json
+bzhyserver/go-isatty  github.com/mattn/go-isatty
