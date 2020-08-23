@@ -32,6 +32,7 @@ type  global struct {
 	Port int `yaml: "port"`
 	HomePath string `yaml: "root"`
 	PidPath string `yaml: "pid"`
+	Indexs string `yaml: "index"`
 }
 
 //Struct for log block 

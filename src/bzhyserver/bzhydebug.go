@@ -28,9 +28,9 @@ func debugPrintRoute(httpMethod, absolutePath string, handlers HandlersChain) {
 		nuHandlers := len(handlers)
 		handlerName := nameOfFunction(handlers.Last())
 		if DebugPrintRouteFunc == nil {
-			debugPrint("%-6s %-25s --> %s (%d handlers)\n", httpMethod, absolutePath, handlerName, nuHandlers)
+			ErrorLogPrintFunc(fmt.Sprintf("%-6s %-25s --> %s (%d handlers)\n", httpMethod, absolutePath, handlerName, nuHandlers),"debug")
 		} else {
-			DebugPrintRouteFunc(httpMethod, absolutePath, handlerName, nuHandlers)
+			ErrorLogPrintFunc(fmt.Sprintf("%-6s %-25s %s %d handlers",httpMethod, absolutePath, handlerName, nuHandlers),"debug")
 		}
 	}
 }
@@ -43,7 +43,7 @@ func debugPrintLoadTemplate(tmpl *template.Template) {
 			buf.WriteString(tmpl.Name())
 			buf.WriteString("\n")
 		}
-		debugPrint("Loaded HTML Templates (%d): \n%s\n", len(tmpl.Templates()), buf.String())
+		AccessLogPrintFunc(fmt.Sprintf("Loaded HTML Templates (%d): \n%s\n", len(tmpl.Templates()), buf.String()),"info")
 	}
 }
 
@@ -52,7 +52,7 @@ func debugPrint(format string, values ...interface{}) {
 		if !strings.HasSuffix(format, "\n") {
 			format += "\n"
 		}
-		fmt.Fprintf(DefaultWriter, "[GIN-debug] "+format, values...)
+		ErrorLogPrintFunc(fmt.Sprintf(format, values...),"debug")
 	}
 }
 
@@ -67,37 +67,31 @@ func getMinVer(v string) (uint64, error) {
 
 func debugPrintWARNINGDefault() {
 	if v, e := getMinVer(runtime.Version()); e == nil && v <= ginSupportMinGoVer {
-		debugPrint(`[WARNING] Now Gin requires Go 1.11 or later and Go 1.12 will be required soon.
-
-`)
+		ErrorLogPrintFunc("Now bzhyserver requires Go 1.11 or later and Go 1.12 will be required soon.","warn")
 	}
-	debugPrint(`[WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
-
-`)
+	ErrorLogPrintFunc("Creating an Engine instance with the Logger and Recovery middleware already attached.","warn")
 }
 
 func debugPrintWARNINGNew() {
-	debugPrint(`[WARNING] Running in "debug" mode. Switch to "release" mode in production.
- - using env:	export GIN_MODE=release
- - using code:	gin.SetMode(gin.ReleaseMode)
-
-`)
+	ErrorLogPrintFunc(`Running in "debug" mode. Switch to "release" mode in production.`,"debug")
+	ErrorLogPrintFunc("- using env:	export SERVER_MODE=release","debug")
+	ErrorLogPrintFunc("- using code:	bzhyserver.SetMode(bzhyserver.ReleaseMode)","debug")
 }
 
 func debugPrintWARNINGSetHTMLTemplate() {
-	debugPrint(`[WARNING] Since SetHTMLTemplate() is NOT thread-safe. It should only be called
+	ErrorLogPrintFunc(`Since SetHTMLTemplate() is NOT thread-safe. It should only be called
 at initialization. ie. before any route is registered or the router is listening in a socket:
 
-	router := gin.Default()
+	router := bzhyserver.Default()
 	router.SetHTMLTemplate(template) // << good place
 
-`)
+`,"debug")
 }
 
 func debugPrintError(err error) {
 	if err != nil {
 		if IsDebugging() {
-			fmt.Fprintf(DefaultErrorWriter, "[GIN-debug] [ERROR] %v\n", err)
+			ErrorLogPrintFunc(fmt.Sprintf("%v\n",err),"error")
 		}
 	}
 }

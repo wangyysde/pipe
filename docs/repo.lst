@@ -2,3 +2,10 @@ bzhyserver/sse     https://github.com/gin-contrib/sse
 bzhyserver/bytesconv  github.com/gin-gonic/gin/internal/bytesconv
 bzhyserver/json       github.com/gin-gonic/gin/internal/json
 bzhyserver/go-isatty  github.com/mattn/go-isatty
+bzhyserver	          github.com/gin-gonic/gin
+gin examples          https://github.com/gin-gonic/examples
+yaml.v2               gopkg.in/yaml.v2
+go-sqlite3            github.com/mattn/go-sqlite3
+gin-contrib/sessions  github.com/gin-contrib/sessions
+gorilla_sessions      github.com/gorilla/sessions
+gorilla_context	      github.com/gorilla/context

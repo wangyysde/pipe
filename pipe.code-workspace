@@ -1,0 +1,10 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"go.gopath": "E:\\documents\\documented_document\\code\\golang\\pipe;E:\\documents\\documented_document\\code\\golang"
+	}
+}

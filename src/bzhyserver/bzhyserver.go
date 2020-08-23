@@ -24,6 +24,14 @@ var (
 	default405Body = []byte("405 method not allowed")
 )
 
+type HandlerLogFunc func(logmsg string, loglevel string) 
+
+var (
+  AccessLogPrintFunc HandlerLogFunc =  WriteLog2Stdout
+  ErrorLogPrintFunc HandlerLogFunc =  WriteLog2Stdout
+)
+
+
 var defaultAppEngine bool
 
 // HandlerFunc defines the handler used by gin middleware as return value.
@@ -461,6 +469,7 @@ func serveError(c *Context, code int, defaultMessage []byte) {
 		c.writermem.Header()["Content-Type"] = mimePlain
 		_, err := c.Writer.Write(defaultMessage)
 		if err != nil {
+			ErrorLogPrintFunc(fmt.Sprintf("cannot write message to writer during serve error: %v", err),"debug")
 			debugPrint("cannot write message to writer during serve error: %v", err)
 		}
 		return
@@ -506,3 +515,15 @@ func redirectRequest(c *Context) {
 	http.Redirect(c.Writer, req, rURL, code)
 	c.writermem.WriteHeaderNow()
 }
+
+func SetAccLogHandler(f HandlerLogFunc){
+	if f != nil {
+		AccessLogPrintFunc = f 
+	}
+}
+
+func SetErrLogHandler(f HandlerLogFunc){
+	if f != nil {
+		ErrorLogPrintFunc = f
+	}
+}	

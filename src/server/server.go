@@ -1,59 +1,99 @@
 package main
 
-import "github.com/gin-gonic/gin"
-import "context"
-import "net/http"
-import "os"
-import "os/signal"
-import "syscall"
-import "time"
-import "log"
-import "config"
-import "strconv"
-import "fmt"
+import (
+	"bzhyserver"
+	"config"
+	"context"
+	"fmt"
+	"net/http"
+	"strconv"
+	"string"
+)
 
-func init_serer()(ret int) {
-		r := gin.Default()
-		gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
-			//log.Printf("endpoint %v %v %v %v\n", httpMethod, absolutePath, handlerName, nuHandlers)
-			logmsg := fmt.Sprintf("endpoint %v %v %v %v\n", httpMethod, absolutePath, handlerName, nuHandlers)
-			WriteStartLog(logmsg,"info")
-			//log_startmsg(logmsg,"Info")
-		}
+type Server struct {
+	context    context.Context
+	shutdownFn context.CancelFunc
+	//	childRoutines      *errgroup.Group
+	cfg                *config.Config
+	shutdownReason     string
+	shutdownInProgress bool
 
-    r.GET("/", func(c *gin.Context) {
-        time.Sleep(5*time.Second)
-        c.String(http.StatusOK, "Welcome Gin Server")
-        c.JSON(200, gin.H{
-            "Blog":"www.flysnow.org",
-            "wechat":"flysnow_org",
-        })
-    })
+	configFile string
+	rootPath   string
+	indexs		 []string
+	index			 string 
+	pidFile    string
 
-    srv := &http.Server{
-			Addr:    ":" + strconv.Itoa(config.Cfg.Global.Port) ,
-      Handler: r,
-    }
+	r *bzhyserver.Engine
+	//RouteRegister routing.RouteRegister `inject:""`
+	//HTTPServer    *api.HTTPServer       `inject:""`
+}
 
-    go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
-		}
-    }()
-    
-    quit := make(chan os.Signal)
+var Svr = new(Server)
 
-    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-    log.Println("Shutting down server...")
-    
-    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown:", err)
+func NewServer(Cfg *config.Config) *Server {
+	Svr.cfg = Cfg
+	Svr.configFile = Cfg.Config
+	Svr.indexs = string.Split(Cfg.Index)
+	if len(Svr.indexs) == 1 && Svr.indexs[0] == "" {
+		WriteStartLog("The default page of the server is empty. index.html will be used", "warn")
+		Svr.indexs[0] = "index.html"
 	}
+	Svr.r =  bzhyserver.Default()
+	Svr.r.SetAccLogHandler(WriteLog2Acclog)
+	Svr.r.SetErrLogHandler(WriteLog2Errlog)
+	Svr.r.Get("/",HandlerGetRequest)
+
+	return Svr
+}
+
+func(c *bzhyserver.Context){
+
+
+}
+
+/*
+func init_serer() (ret int) {
+
+	r := bzhyserver.Default()
+	r.SetAccLogHandler(WriteLog2Acclog)
+	r.SetErrLogHandler(WriteLog2Errlog)
+
+	r.GET("/", GetHandler)
+	r.POST("/somePost", posting)
+		  r.PUT("/somePut", putting)
+		  r.DELETE("/someDelete", deleting)
+		  r.PATCH("/somePatch", patching)
+		  r.HEAD("/someHead", head)
+		  r.OPTIONS("/someOptions", options)
+			gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
+				//log.Printf("endpoint %v %v %v %v\n", httpMethod, absolutePath, handlerName, nuHandlers)
+				logmsg := fmt.Sprintf("endpoint %v %v %v %v\n", httpMethod, absolutePath, handlerName, nuHandlers)
+				WriteStartLog(logmsg,"info")
+				//log_startmsg(logmsg,"Info")
+			}
+
+	    r.GET("/", func(c *gin.Context) {
+	        time.Sleep(5*time.Second)
+	        c.String(http.StatusOK, "Welcome Gin Server")
+	        c.JSON(200, gin.H{
+	            "Blog":"www.flysnow.org",
+	            "wechat":"flysnow_org",
+	        })
+	    })
 	
-    log.Println("Server exiting")
-    
+	srv := &http.Server{
+		Addr:    ":" + strconv.Itoa(config.Cfg.Global.Port),
+		Handler: r,
+	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			WriteStartLog(fmt.Sprintf("Listen %s:%s %s", config.Cfg.Host, config.Cfg.Port, err), "fatal")
+		}
+	}()
+
 	return 0
 }
+
+*/
